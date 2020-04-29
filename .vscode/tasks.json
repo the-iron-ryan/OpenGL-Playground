@@ -12,6 +12,8 @@
                 "${workspaceFolder}/bin/app",
                 "-lpthread",
                 "-lGL",
+                "-lGLEW",
+                "-lglut",
                 "-ldl",
                 "-lX11",
                 "-lglfw3"
