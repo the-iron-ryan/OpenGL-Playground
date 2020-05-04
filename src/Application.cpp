@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <sstream>
 
 #include <GL/glew.h>
@@ -26,6 +27,10 @@ static void ParseShaderFile(const std::string& filepath, ShaderProgramData& out_
 {
     std::cout << "Reading filepath: " << filepath << std::endl;
     std::ifstream shaderFileStream(filepath);
+    if(!shaderFileStream)
+    {
+        std::cerr << "Error opening file. Error code: " << strerror(errno);
+    }
 
 
     std::string line;
@@ -58,7 +63,7 @@ static void ParseShaderFile(const std::string& filepath, ShaderProgramData& out_
 
     // Set final shader output streams
     out_shaderProgData.VertexSource = shaderStreams[(int) EShaderType::VERTEX].str();
-    out_shaderProgData.VertexSource = shaderStreams[(int) EShaderType::FRAGMENT].str();
+    out_shaderProgData.FragmentSource = shaderStreams[(int) EShaderType::FRAGMENT].str();
 }
 
 static uint CompileShader(GLenum shaderType, const std::string& source)
@@ -172,7 +177,7 @@ int main(void)
 
     // Parse files for shader source
     ShaderProgramData ProgData;
-    ParseShaderFile("/res/shaders/basicTriangle.glsl", ProgData);
+    ParseShaderFile("/home/the-iron-ryan/Software-Projects/OpenGL-Playground/res/shaders/basicTriangle.glsl", ProgData);
 
     // Creating a program with our compiled shaders
     uint shaderProg = CreateShader(ProgData.VertexSource, ProgData.FragmentSource);
