@@ -9,12 +9,23 @@
 
 #include <GLFW/glfw3.h>
 
+#define MYGL_CLEAR_ERROR while(glGetError() != GL_NO_ERROR);
+#define MYGL_REPORT_ERRORS GLReportErrors();
+
+
+static void GLReportErrors()
+{
+    while(GLenum err = glGetError())
+    {
+        std::cout << "[Open GL Error]: " << err << std::endl;
+    }
+}
+
 struct ShaderProgramData
 {
     std::string VertexSource;
     std::string FragmentSource;
 };
-
 
 enum class EShaderType
 {
@@ -22,6 +33,7 @@ enum class EShaderType
     FRAGMENT = 1,
     NONE = -1
 };
+
 
 static void ParseShaderFile(const std::string& filepath, ShaderProgramData& out_shaderProgData)
 {
@@ -151,29 +163,41 @@ int main(void)
     // 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
-    unsigned int trianleBuffer_id;
-    float trianglePos[3][2] = 
+    float trianglePos[4][2] = 
     {
         {-0.5f, -0.5f},
-        {0.0f, 0.5f},
-        {0.5f, -0.5f},
+        { 0.5f, -0.5f},
+        { 0.5f,  0.5f},
+        {-0.5f,  0.5f},
     };
 
+    uint triangleIndices[] = 
+    {
+        0, 1, 2, // Tri 0
+        2, 3, 0  // Tri 1
+    };
+
+
     // Gen buffer with specified id
+    unsigned int trianleBuffer_id;
     glGenBuffers(1, &trianleBuffer_id);
     // Binding this buffer as being used
     glBindBuffer(GL_ARRAY_BUFFER, trianleBuffer_id);
     // Put data inside of buffer
     glBufferData(GL_ARRAY_BUFFER, sizeof(trianglePos), &trianglePos, GL_STATIC_DRAW);
 
-    
     /* ENABLING ATTRIBUTES */
     glEnableVertexAttribArray(0);
 
     /* DEFINING ATTRIBUTES */
-
     // Index 0: position with 2 coordinates, with a pointer starting from an offset of 0
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *) 0);
+
+    /* DEFINING INDEX BUFFER */
+    uint triangleIbo_id; // 
+    glGenBuffers(1, &triangleIbo_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, triangleIbo_id);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangleIndices), &triangleIndices, GL_STATIC_DRAW);
 
     // Parse files for shader source
     ShaderProgramData ProgData;
@@ -189,8 +213,11 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
+        MYGL_CLEAR_ERROR
         // Draw call!
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        MYGL_REPORT_ERRORS
+        
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
