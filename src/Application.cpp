@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -9,15 +10,73 @@
 
 #include <GLFW/glfw3.h>
 
-#define MYGL_CLEAR_ERROR while(glGetError() != GL_NO_ERROR);
-#define MYGL_REPORT_ERRORS GLReportErrors();
+using namespace std;
 
 
-static void GLReportErrors()
+void GLAPIENTRY
+DebugMessageCallback(GLenum source,
+                     GLenum type,
+                     GLuint id,
+                     GLenum severity,
+                     GLsizei length,
+                     const GLchar* message,
+                     const void* userParam )
 {
-    while(GLenum err = glGetError())
+    std::cout << "DEBUG LOG ";
+
+    switch (severity)
     {
-        std::cout << "[Open GL Error]: " << err << std::endl;
+    case GL_DEBUG_SEVERITY_NOTIFICATION:
+        cout << "[NOTE]";
+        break;
+    case GL_DEBUG_SEVERITY_LOW:
+        cout << "[LOW]";
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        cout << "[MEDIUM]";
+        break;
+    case GL_DEBUG_SEVERITY_HIGH:
+        cout << "[HIGH]";
+        break;
+    }
+
+    std::cout << " ";
+
+    switch (type)
+    {
+    case GL_DEBUG_TYPE_ERROR:
+        cout << "<ERROR>";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        cout << "<DEPRECATED_BEHAVIOR>";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        cout << "<UNDEFINED_BEHAVIOR>";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        cout << "<PORTABILITY>";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        cout << "<PERFORMANCE>";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        cout << "<OTHER>";
+        break;
+    }
+
+    std::cout << ": " << message << endl;
+
+
+    // Lastly raise break execution on severe errors
+    switch (severity)
+    {
+        case GL_DEBUG_SEVERITY_MEDIUM:
+        case GL_DEBUG_SEVERITY_HIGH:
+            raise(SIGTRAP);
+            break;
+
+        default:
+            break;
     }
 }
 
@@ -37,7 +96,6 @@ enum class EShaderType
 
 static void ParseShaderFile(const std::string& filepath, ShaderProgramData& out_shaderProgData)
 {
-    std::cout << "Reading filepath: " << filepath << std::endl;
     std::ifstream shaderFileStream(filepath);
     if(!shaderFileStream)
     {
@@ -160,8 +218,8 @@ int main(void)
         return -1;
     }
 
-    // 
-    std::cout << glGetString(GL_VERSION) << std::endl;
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(DebugMessageCallback, 0);
 
     float trianglePos[4][2] = 
     {
@@ -213,11 +271,8 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-        MYGL_CLEAR_ERROR
         // Draw call!
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-        MYGL_REPORT_ERRORS
-        
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
