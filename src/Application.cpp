@@ -210,6 +210,7 @@ int main(void)
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
 
     GLenum err = glewInit();
     if(err != GLEW_OK)
@@ -265,12 +266,25 @@ int main(void)
     uint shaderProg = CreateShader(ProgData.VertexSource, ProgData.FragmentSource);
     glUseProgram(shaderProg);
 
+    float r = 0.f, g = 0.f, b = 0.f;
+    float step;
+    float inc = step = 0.01f;
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
+
+        if(r >= 1.f)
+            inc = -step;
+        else if(r <= 0.f)
+            inc = step;
+            
+        r += inc;
+
+        glUniform4f(1, r, g, b, 1.0f);
         // Draw call!
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
