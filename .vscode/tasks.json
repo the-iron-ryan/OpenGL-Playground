@@ -2,7 +2,7 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "g++ build active file",
+            "label": "Build Arch",
             "command": "/usr/bin/g++",
             "args": [
                 "-g",
@@ -18,6 +18,30 @@
                 "-ldl",
                 "-lX11",
                 "-lglfw3"
+            ],
+            "options": {
+                "cwd": "/usr/bin"
+            }
+        },
+        {
+            "type": "shell",
+            "label": "Build Ubuntu",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-g",
+                "-I",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src/*",
+                "-o",
+                "${workspaceFolder}/bin/app",
+                "-lpthread",
+                "-lGLU",
+                "-lglut",
+                "-lGLEW",
+                "-lglfw",
+                "-lX11",
+                "-ldl",
+                "-lGL"
             ],
             "options": {
                 "cwd": "/usr/bin"

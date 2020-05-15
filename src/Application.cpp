@@ -1,3 +1,11 @@
+#ifdef WINDOWS
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#endif
+
 #include <signal.h>
 #include <iostream>
 #include <fstream>
@@ -237,20 +245,23 @@ int main(void)
     };
 
 
+    /* SETUP VERTEX ARRAY OBJECT */
+    uint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
     // Gen buffer with specified id
     unsigned int trianleBuffer_id;
     glGenBuffers(1, &trianleBuffer_id);
-    // Binding this buffer as being used
     glBindBuffer(GL_ARRAY_BUFFER, trianleBuffer_id);
-    // Put data inside of buffer
     glBufferData(GL_ARRAY_BUFFER, sizeof(trianglePos), &trianglePos, GL_STATIC_DRAW);
 
-    /* ENABLING ATTRIBUTES */
+    /* ATTRIBUTES */
+    // NOTE: index 0 of vertex array is now currently bound to current GL_ARRAY_BUFFER
+    //       ie, this binds vao to current array buffer
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *) 0); // Index 0: position with 2 coordinates, with a pointer starting from an offset of 0
 
-    /* DEFINING ATTRIBUTES */
-    // Index 0: position with 2 coordinates, with a pointer starting from an offset of 0
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *) 0);
 
     /* DEFINING INDEX BUFFER */
     uint triangleIbo_id; // 
@@ -259,16 +270,17 @@ int main(void)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangleIndices), &triangleIndices, GL_STATIC_DRAW);
 
     // Parse files for shader source
+    char curDirectory[FILENAME_MAX];
+    GetCurrentDir(curDirectory, sizeof(curDirectory));
+    string triangleShaderFile = string(curDirectory) + "/res/shaders/basicTriangle.glsl";
     ShaderProgramData ProgData;
-    ParseShaderFile("/home/the-iron-ryan/Software-Projects/OpenGL-Playground/res/shaders/basicTriangle.glsl", ProgData);
+    ParseShaderFile(triangleShaderFile, ProgData);
 
     // Creating a program with our compiled shaders
     uint shaderProg = CreateShader(ProgData.VertexSource, ProgData.FragmentSource);
-    glUseProgram(shaderProg);
-
     float r = 0.f, g = 0.f, b = 0.f;
     float step;
-    float inc = step = 0.01f;
+    float inc = step = 0.001f;
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -276,15 +288,12 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
-
-        if(r >= 1.f)
-            inc = -step;
-        else if(r <= 0.f)
-            inc = step;
-            
-        r += inc;
-
+        glUseProgram(shaderProg);
         glUniform4f(1, r, g, b, 1.0f);
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, triangleIbo_id);
+
         // Draw call!
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
@@ -293,6 +302,14 @@ int main(void)
 
         /* Poll for and process events */
         glfwPollEvents();
+
+        if(r >= 1.f)
+            inc = -step;
+        else if(r <= 0.f)
+            inc = step;
+            
+        r += inc;
+
     }
 
     glDeleteProgram(shaderProg);
