@@ -63,6 +63,8 @@ DebugMessageCallback(GLenum source,
 
     std::cout << ": " << message << endl;
 
+    
+
 
     // Lastly raise break execution on severe errors
     switch (severity)

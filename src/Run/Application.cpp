@@ -20,6 +20,10 @@
 
 #include "Debugging.h"
 
+#include "VertexArray.h"
+#include "VertexBufferLayout.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 using namespace std;
 
@@ -165,89 +169,82 @@ int main(void)
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(DebugMessageCallback, 0);
 
-    float trianglePos[4][2] = 
     {
-        {-0.5f, -0.5f},
-        { 0.5f, -0.5f},
-        { 0.5f,  0.5f},
-        {-0.5f,  0.5f},
-    };
+        float trianglePos[4][2] =
+            {
+                {-0.5f, -0.5f},
+                {0.5f, -0.5f},
+                {0.5f, 0.5f},
+                {-0.5f, 0.5f},
+            };
 
-    uint triangleIndices[] = 
-    {
-        0, 1, 2, // Tri 0
-        2, 3, 0  // Tri 1
-    };
-
-
-    /* SETUP VERTEX ARRAY OBJECT */
-    uint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    // Gen buffer with specified id
-    unsigned int trianleBuffer_id;
-    glGenBuffers(1, &trianleBuffer_id);
-    glBindBuffer(GL_ARRAY_BUFFER, trianleBuffer_id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(trianglePos), &trianglePos, GL_STATIC_DRAW);
-
-    /* ATTRIBUTES */
-    // NOTE: index 0 of vertex array is now currently bound to current GL_ARRAY_BUFFER
-    //       ie, this binds vao to current array buffer
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *) 0); // Index 0: position with 2 coordinates, with a pointer starting from an offset of 0
+        uint triangleIndices[] =
+            {
+                0, 1, 2, // Tri 0
+                2, 3, 0  // Tri 1
+            };
 
 
-    /* DEFINING INDEX BUFFER */
-    uint triangleIbo_id; // 
-    glGenBuffers(1, &triangleIbo_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, triangleIbo_id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(triangleIndices), &triangleIndices, GL_STATIC_DRAW);
+        /* SETUP VERTEX ARRAY OBJECT */
+        VertexArray va;
 
-    // Parse files for shader source
-    char curDirectory[FILENAME_MAX];
-    GetCurrentDir(curDirectory, sizeof(curDirectory));
-    string triangleShaderFile = string(curDirectory) + "/res/shaders/basicTriangle.glsl";
-    ShaderProgramData ProgData;
-    ParseShaderFile(triangleShaderFile, ProgData);
+        // Gen buffer with specified id
+        VertexBuffer vb(trianglePos, sizeof(trianglePos), GL_STATIC_DRAW);
 
-    // Creating a program with our compiled shaders
-    uint shaderProg = CreateShader(ProgData.VertexSource, ProgData.FragmentSource);
-    float r = 0.f, g = 0.f, b = 0.f;
-    float step;
-    float inc = step = 0.001f;
+        // Define our layout
+        VertexBufferLayout layout;
+        layout.Push<float>(2);
 
-    /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
-        /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
+        // Add 
+        va.AddBuffer(vb, layout);
 
-        glUseProgram(shaderProg);
-        glUniform4f(1, r, g, b, 1.0f);
+        /* DEFINING INDEX BUFFER */
+        IndexBuffer ib(triangleIndices, sizeof(triangleIndices), GL_STATIC_DRAW);
 
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, triangleIbo_id);
+        // Parse files for shader source
+        char curDirectory[FILENAME_MAX];
+        GetCurrentDir(curDirectory, sizeof(curDirectory));
+        string triangleShaderFile = string(curDirectory) + "/res/shaders/basicTriangle.glsl";
+        ShaderProgramData ProgData;
+        ParseShaderFile(triangleShaderFile, ProgData);
 
-        // Draw call!
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        // Creating a program with our compiled shaders
+        uint shaderProg = CreateShader(ProgData.VertexSource, ProgData.FragmentSource);
+        float r = 0.f, g = 0.f, b = 0.f;
+        float step;
+        float inc = step = 0.001f;
 
-        /* Swap front and back buffers */
-        glfwSwapBuffers(window);
+        /* Loop until the user closes the window */
+        while (!glfwWindowShouldClose(window))
+        {
+            /* Render here */
+            glClear(GL_COLOR_BUFFER_BIT);
 
-        /* Poll for and process events */
-        glfwPollEvents();
+            glUseProgram(shaderProg);
+            glUniform4f(1, r, g, b, 1.0f);
 
-        if(r >= 1.f)
-            inc = -step;
-        else if(r <= 0.f)
-            inc = step;
-            
-        r += inc;
+            va.Bind();
+            ib.Bind();
 
+            // Draw call!
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+            /* Swap front and back buffers */
+            glfwSwapBuffers(window);
+
+            /* Poll for and process events */
+            glfwPollEvents();
+
+            if (r >= 1.f)
+                inc = -step;
+            else if (r <= 0.f)
+                inc = step;
+
+            r += inc;
+        }
+
+        glDeleteProgram(shaderProg);
     }
-
-    glDeleteProgram(shaderProg);
 
     glfwTerminate();
     return 0;

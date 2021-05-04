@@ -3,16 +3,17 @@
 
 #include <GL/glew.h>
 
-#include "BaseBuffer.h"
+#include "Bindable.h"
 
-class VertexBuffer : public IBaseBuffer
+class VertexBuffer : public IBindable 
 {
 public:
     VertexBuffer(const void* data, unsigned int size, GLenum drawType = GL_STATIC_DRAW);
     ~VertexBuffer();
 
-    virtual void bind() override;
-    virtual void unbind() override;
+public:
+    virtual void Bind() const override;
+    virtual void Unbind() const override;
 };
 
 #endif
